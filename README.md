@@ -1,6 +1,6 @@
 # Quantum Overdrive
 
-Quantum Overdrive is a Windows WPF companion for monitoring PC performance and preparing a system for gaming a great alternative to Nvidia statistics. It is designed to be edited and built in Visual Studio Code with the .NET 9 SDK.
+Quantum Overdrive is a Windows WPF companion for monitoring PC performance and preparing a system for gaming, great alternative to Nvidia statistics. It is designed to be edited and built in Visual Studio Code with the .NET 9 SDK.
 
 ## Features
 
