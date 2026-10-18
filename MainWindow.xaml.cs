@@ -17,6 +17,7 @@ public partial class MainWindow : Window
 {
     private readonly HardwareMonitor _monitor = new();
     private readonly ObservableCollection<GameEntry> _games = [];
+    private readonly ObservableCollection<GpuMetrics> _gpuMetrics = [];
     private readonly Queue<double> _cpuHistory = new();
     private readonly Queue<double> _gpuHistory = new();
     private readonly System.Windows.Threading.DispatcherTimer _timer = new();
@@ -28,6 +29,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         GameList.ItemsSource = _games;
+        GpuDevicesList.ItemsSource = _gpuMetrics;
         IntervalCombo.SelectionChanged += IntervalCombo_SelectionChanged;
         _timer.Interval = TimeSpan.FromSeconds(1);
         _timer.Tick += Timer_Tick;
@@ -101,18 +103,33 @@ public partial class MainWindow : Window
         try
         {
             var metrics = await _monitor.ReadOptionalAsync();
-            GpuUsageText.Text = metrics.GpuUsage?.ToString("0") ?? "--";
-            GpuNameText.Text = metrics.GpuUsage.HasValue
-                ? "GPU core utilization"
-                : "No GPU load sensor detected";
+            GpuUsageText.Text = metrics.TotalGpuLoadPercent?.ToString("0") ?? "--";
+            var busiestGpu = metrics.Gpus
+                .Where(gpu => gpu.LoadPercent.HasValue)
+                .OrderByDescending(gpu => gpu.LoadPercent)
+                .FirstOrDefault();
+            GpuNameText.Text = busiestGpu is not null
+                ? $"{busiestGpu.Name} · {metrics.Gpus.Count} detected"
+                : metrics.Gpus.Count == 0
+                    ? "No supported graphics adapters detected"
+                    : $"{metrics.Gpus.Count} detected · load unavailable";
             CpuTemperatureText.Text = metrics.CpuTemperatureC?.ToString("0") ?? "--";
             TemperatureSourceText.Text = metrics.CpuTemperatureC.HasValue
                 ? "Hardware temperature sensor"
                 : "No CPU temperature sensor detected";
-            AddHistory(_gpuHistory, metrics.GpuUsage);
+            _gpuMetrics.Clear();
+            foreach (var gpu in metrics.Gpus)
+                _gpuMetrics.Add(gpu);
+            GpuDetectionHint.Text = metrics.Gpus.Count switch
+            {
+                0 => "No GPU hardware was exposed by the current driver/sensor interface. Try running as administrator and check that the graphics driver is installed.",
+                1 => "One graphics adapter detected. Per-game GPU preference is configured through Windows.",
+                _ => $"{metrics.Gpus.Count} graphics adapters detected. Per-game GPU preference is configured through Windows."
+            };
+            AddHistory(_gpuHistory, metrics.TotalGpuLoadPercent);
             DrawCharts();
-            if (!metrics.GpuUsage.HasValue || !metrics.CpuTemperatureC.HasValue)
-                NotificationText.Text = "GPU/CPU sensors not exposed by this hardware or driver. Try launching Quantum Overdrive as administrator.";
+            if (metrics.Gpus.Count == 0 || !metrics.CpuTemperatureC.HasValue)
+                NotificationText.Text = "Some hardware sensors are unavailable. See Settings → Detected graphics adapters for details.";
         }
         catch (Exception ex)
         {
@@ -244,6 +261,60 @@ public partial class MainWindow : Window
     }
 
     private void LaunchGame_Click(object sender, RoutedEventArgs e) => LaunchGame(GamePathBox.Text);
+
+    private void ApplyGpuPreference_Click(object sender, RoutedEventArgs e)
+    {
+        var path = GamePathBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            NotificationText.Text = "Select an existing game executable before applying its GPU preference.";
+            return;
+        }
+
+        if (GraphicsPreferenceCombo.SelectedItem is not ComboBoxItem item || item.Tag is not string preference)
+        {
+            NotificationText.Text = "Select a GPU preference first.";
+            return;
+        }
+
+        try
+        {
+            using var preferences = Registry.CurrentUser.CreateSubKey(
+                @"Software\Microsoft\DirectX\UserGpuPreferences", writable: true);
+            if (preferences is null)
+                throw new InvalidOperationException("Windows did not allow access to per-game graphics preferences.");
+
+            if (preference == "default")
+                preferences.DeleteValue(Path.GetFullPath(path), throwOnMissingValue: false);
+            else
+                preferences.SetValue(Path.GetFullPath(path), $"GpuPreference={preference};", RegistryValueKind.String);
+
+            AddGame(path);
+            NotificationText.Text = preference switch
+            {
+                "1" => $"Windows power-saving GPU preference saved for {Path.GetFileNameWithoutExtension(path)}.",
+                "2" => $"Windows high-performance GPU preference saved for {Path.GetFileNameWithoutExtension(path)}.",
+                _ => $"Windows default GPU preference restored for {Path.GetFileNameWithoutExtension(path)}."
+            };
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException or InvalidOperationException)
+        {
+            NotificationText.Text = $"Could not save the Windows GPU preference: {ex.Message}";
+        }
+    }
+
+    private void OpenGraphicsSettings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("ms-settings:display-advancedgraphics") { UseShellExecute = true });
+            NotificationText.Text = "Opened Windows Graphics settings. Choose the specific GPU there if Windows offers a per-adapter selector.";
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            NotificationText.Text = $"Could not open Windows Graphics settings: {ex.Message}";
+        }
+    }
 
     private void LaunchGame(string path)
     {

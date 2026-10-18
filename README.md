@@ -1,18 +1,20 @@
 # Quantum Overdrive
 
-Quantum Overdrive is a Windows WPF companion for monitoring PC performance and preparing a system for gaming, great alternative to Nvidia statistics. It is designed to be edited and built in Visual Studio Code with the .NET 9 SDK.
+Quantum Overdrive is a Windows WPF companion for monitoring PC performance and preparing a system for gaming. It is designed to be edited and built in Visual Studio Code with the .NET 9 SDK.
 
 ## Features
 
 - Live CPU utilization, physical memory use, and CPU/GPU hardware sensor readings where supported by the hardware and drivers.
+- Detected graphics adapters with individual GPU utilization and temperature readings when available.
 - A rolling 60-second CPU/GPU usage chart.
 - Selectable 1, 2, or 5 second refresh interval.
 - Game library shortcuts and direct executable launch.
 - Optional Above normal process priority for games launched by the app.
+- Per-game Windows graphics preferences for power-saving or high-performance GPU selection, with a shortcut to Windows Graphics settings for choosing a specific adapter.
 - Reversible Windows power plan controls and a shortcut to Windows Game Mode settings.
 - Dark interface; telemetry is read locally and is not uploaded.
 
-Sensor support varies between PCs. CPU temperature and GPU utilization are collected with LibreHardwareMonitor; some devices require launching the app as administrator, and some hardware/driver combinations do not expose these sensors.
+Sensor support varies between PCs. CPU temperature and GPU utilization are collected with LibreHardwareMonitor; some devices require launching the app as administrator, and some hardware/driver combinations do not expose these sensors. Windows graphics preference is a per-game power-saving/high-performance hint, not an explicit adapter ID; Windows and the graphics driver decide the actual adapter. Use Windows Graphics settings to select a specific GPU when offered.
 
 The gaming setup switches to the Windows High performance power plan and opens Game Mode settings for the user to review. Restore Balanced to switch back. The app does not overclock hardware or terminate background processes.
 

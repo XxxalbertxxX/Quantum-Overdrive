@@ -162,12 +162,28 @@
                             <TextBlock Text="Launch and prioritize a game" FontSize="18" FontWeight="SemiBold" />
                             <TextBlock Text="Choose a game executable, launch it, then optionally raise its process priority while it is running." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,7,0,17" />
                             <Grid>
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                <TextBox x:Name="GamePathBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Path to a game .exe" />
-                                <Button Grid.Column="1" Content="Browse…" Click="BrowseGame_Click" Margin="9,0,9,0" />
-                                <Button Grid.Column="2" Content="Launch game" Style="{StaticResource AccentButton}" Click="LaunchGame_Click" />
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="GamePathBox" Grid.Column="0" VerticalContentAlignment="Center" ToolTip="Path to a game .exe" />
+                                    <Button Grid.Column="1" Content="Browse…" Click="BrowseGame_Click" Margin="9,0,0,0" />
+                                </Grid>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                                    <TextBlock Text="Preferred GPU" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <ComboBox x:Name="GraphicsPreferenceCombo" Width="190" VerticalContentAlignment="Center">
+                                        <ComboBoxItem Content="Let Windows decide" Tag="default" IsSelected="True" />
+                                        <ComboBoxItem Content="Power saving GPU" Tag="1" />
+                                        <ComboBoxItem Content="High performance GPU" Tag="2" />
+                                    </ComboBox>
+                                    <Button Content="Apply for this game" Click="ApplyGpuPreference_Click" Margin="9,0,0,0" />
+                                </StackPanel>
+                                <WrapPanel Grid.Row="2" Margin="0,10,0,0">
+                                    <Button Content="Launch game" Style="{StaticResource AccentButton}" Click="LaunchGame_Click" Margin="0,0,9,0" />
+                                    <Button Content="Windows graphics settings…" Click="OpenGraphicsSettings_Click" />
+                                </WrapPanel>
                             </Grid>
                             <CheckBox x:Name="HighPriorityCheck" Content="Set game process to Above normal priority after launch" Foreground="{StaticResource MutedBrush}" Margin="1,14,0,0" IsChecked="True" />
+                            <TextBlock Text="Windows applies GPU preferences when the game starts and may override them. Use Windows graphics settings to choose a specific adapter." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" FontSize="11" Margin="0,10,0,0" />
                         </StackPanel>
                     </Border>
                     <Border Background="#191721" BorderBrush="#463E65" BorderThickness="1" CornerRadius="12" Padding="16">
@@ -198,29 +214,56 @@
                 </ScrollViewer>
             </Grid>
 
-            <StackPanel x:Name="SettingsPage" Grid.Row="1" Visibility="Collapsed">
-                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="13" Padding="22" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="Monitoring" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="Choose how often hardware usage is refreshed." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,16" />
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Update interval" VerticalAlignment="Center" Margin="0,0,15,0" />
-                            <ComboBox x:Name="IntervalCombo" Width="140">
-                                <ComboBoxItem Content="1 second" Tag="1" IsSelected="True" />
-                                <ComboBoxItem Content="2 seconds" Tag="2" />
-                                <ComboBoxItem Content="5 seconds" Tag="5" />
-                            </ComboBox>
+            <ScrollViewer x:Name="SettingsPage" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="13" Padding="22" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Monitoring" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="Choose how often hardware usage is refreshed." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,16" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Update interval" VerticalAlignment="Center" Margin="0,0,15,0" />
+                                <ComboBox x:Name="IntervalCombo" Width="140">
+                                    <ComboBoxItem Content="1 second" Tag="1" IsSelected="True" />
+                                    <ComboBoxItem Content="2 seconds" Tag="2" />
+                                    <ComboBoxItem Content="5 seconds" Tag="5" />
+                                </ComboBox>
+                            </StackPanel>
+                            <TextBlock Text="CPU temperature and GPU readings depend on hardware sensor and driver support. Unsupported readings appear as unavailable." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,15,0,0" />
                         </StackPanel>
-                        <TextBlock Text="GPU utilization and CPU temperature depend on drivers and sensor support. A metric is shown as unavailable if Windows cannot provide it." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,15,0,0" />
-                    </StackPanel>
-                </Border>
-                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="13" Padding="22">
-                    <StackPanel>
-                        <TextBlock Text="About Quantum Overdrive" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="A lightweight gaming PC monitoring and setup tool. No telemetry leaves your PC; readings are collected locally from Windows." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,7,0,0" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="13" Padding="22" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Detected graphics adapters" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="Hardware names and live sensor readings detected by LibreHardwareMonitor." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,14" />
+                            <ItemsControl x:Name="GpuDevicesList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#101620" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Type}" Foreground="{StaticResource MutedBrush}" FontSize="10" Margin="0,3,0,0" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding LoadText}" Foreground="{StaticResource MintBrush}" VerticalAlignment="Center" Margin="0,0,18,0" />
+                                                <TextBlock Grid.Column="2" Text="{Binding TemperatureText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="GpuDetectionHint" Text="Waiting for the first hardware sensor scan…" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                            <Button Content="Open Windows graphics settings…" HorizontalAlignment="Left" Click="OpenGraphicsSettings_Click" Margin="0,12,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="13" Padding="22">
+                        <StackPanel>
+                            <TextBlock Text="About Quantum Overdrive" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="A lightweight gaming PC monitor and setup tool. No telemetry leaves your PC; readings are collected locally." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,7,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
             <Border Grid.Row="2" Margin="0,15,0,0" Background="#111721" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="11,8">
                 <TextBlock x:Name="NotificationText" Text="Ready · Hardware telemetry runs locally on this PC." Foreground="{StaticResource MutedBrush}" FontSize="11" />
